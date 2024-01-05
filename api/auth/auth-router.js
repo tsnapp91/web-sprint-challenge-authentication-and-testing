@@ -1,8 +1,33 @@
-const router = require('express').Router();
+const router = require("express").Router();
+const db = require("../../data/dbConfig");
+const bcrypt = require("bcrypt");
+const { JWT_SECRET } = require("../secrets");
+const jwt = require("jsonwebtoken");
+const {
+  checkUsernameAvailability,
+  validateInput,
+  validateCredentials,
+} = require("./auth-middleware");
 
-router.post('/register', (req, res) => {
-  res.end('implement register, please!');
-  /*
+router.post(
+  "/register",
+  checkUsernameAvailability,
+  validateInput,
+  async (req, res, next) => {
+    try {
+      const { username, password } = req.body;
+      const hashedPassword = await bcrypt.hash(password, 8);
+
+      const [id] = await db("users").insert({
+        username,
+        password: hashedPassword,
+      });
+      const newUser = await db("users").where("id", id).first();
+      res.status(201).json(newUser);
+    } catch (err) {
+      next(err);
+    }
+    /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
     DO NOT EXCEED 2^8 ROUNDS OF HASHING!
@@ -27,11 +52,22 @@ router.post('/register', (req, res) => {
     4- On FAILED registration due to the `username` being taken,
       the response body should include a string exactly as follows: "username taken".
   */
+  }
+);
+
+router.post("/login", validateInput, validateCredentials, (req, res, next) => {
+  try {
+    const token = buildToken(req.user);
+    res.status(200).json({
+      message: `welcome, ${req.user.username} `,
+      token,
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.post('/login', (req, res) => {
-  res.end('implement login, please!');
-  /*
+/*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
 
@@ -54,6 +90,16 @@ router.post('/login', (req, res) => {
     4- On FAILED login due to `username` not existing in the db, or `password` being incorrect,
       the response body should include a string exactly as follows: "invalid credentials".
   */
-});
+
+function buildToken(user) {
+  const payload = {
+    id: user.id,
+    username: user.username,
+  };
+  const options = {
+    expiresIn: "1d",
+  };
+  return jwt.sign(payload, JWT_SECRET, options);
+}
 
 module.exports = router;
