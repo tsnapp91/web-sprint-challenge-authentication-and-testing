@@ -16,6 +16,13 @@ router.post(
   async (req, res, next) => {
     try {
       const { username, password } = req.body;
+
+      if (!username || !password) {
+        return res
+          .status(400)
+          .json({ message: "Username and password required" });
+      }
+
       const hashedPassword = await bcrypt.hash(password, 8);
 
       const [id] = await db("users").insert({
