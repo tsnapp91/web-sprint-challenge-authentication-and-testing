@@ -11,8 +11,9 @@ const {
 
 router.post(
   "/register",
-  checkUsernameAvailability,
   validateInput,
+  checkUsernameAvailability,
+
   async (req, res, next) => {
     try {
       const { username, password } = req.body;
@@ -20,7 +21,7 @@ router.post(
       if (!username || !password) {
         return res
           .status(400)
-          .json({ message: "Username and password required" });
+          .json({ message: "username and password required" });
       }
 
       const hashedPassword = await bcrypt.hash(password, 8);
@@ -34,6 +35,7 @@ router.post(
     } catch (err) {
       next(err);
     }
+
     /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
