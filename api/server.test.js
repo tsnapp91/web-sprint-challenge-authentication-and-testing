@@ -99,21 +99,34 @@ describe("POST /login endpoint", () => {
       username: "testuser",
       password: "testpass",
     };
-    // const hash = bcrypt.hashSync(validUser.password, 8);
-    // validUser.password = hash;
-    await db("users").insert(validUser);
+    await request(server)
+      .post("/api/auth/register")
+      .send(validUser)
+      .expect(201);
     const response = await request(server)
       .post("/api/auth/login")
       .send(validUser)
       .expect(200);
     expect(response.body).toHaveProperty("token");
   });
-  // test("should return 401 with invalid credentials", async () => {
-  //   const response = await request(server)
-  //     .post("/api/auth/login")
-  //     .send(invalidUser)
-  //     .expect(401);
+  test("should return 401 with invalid credentials", async () => {
+    const validUser = {
+      username: "testuser",
+      password: "testpass",
+    };
+    const invalidUser = {
+      username: "testuser",
+      password: "wrongpass",
+    };
+    await request(server)
+      .post("/api/auth/register")
+      .send(validUser)
+      .expect(201);
+    const response = await request(server)
+      .post("/api/auth/login")
+      .send(invalidUser)
+      .expect(401);
 
-  //   expect(response.body).toEqual({ message: "invalid credentials" });
-  // });
+    expect(response.body).toEqual({ message: "invalid credentials" });
+  });
 });
